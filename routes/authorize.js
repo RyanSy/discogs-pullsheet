@@ -11,7 +11,7 @@ router.get('/', function(req, res, next) {
 	oAuth.getRequestToken(
 		process.env.CONSUMER_KEY,
 		process.env.CONSUMER_SECRET,
-		'http://localhost:3000/callback',
+		'https://discogs-pullsheet.herokuapp.com/callback',
 		function(err, requestData){
       if (err) {
         console.log(err);
