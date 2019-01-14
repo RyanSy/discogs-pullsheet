@@ -17,7 +17,7 @@ router.get('/', function(req, res, next) {
         }
         console.log('accessData saved!');
       });
-      res.redirect('http://localhost:3000/items');
+      res.redirect('https://discogs-pullsheet.herokuapp.com/items');
 		}
 	);
 });
