@@ -13,12 +13,13 @@ router.get('/', function(req, res, next) {
 		process.env.CONSUMER_SECRET,
 		'http://localhost:3000/callback',
 		function(err, requestData){
+      if (err) {
+        console.log(err);
+        res.send("Error");
+      }
 			// Persist "requestData" here so that the callback handler can
 			// access it later after returning from the authorize url
-      console.log('========== requestData ==========');
-      console.log(requestData);
-      console.log('=================================');
-      fs.writeFile('./data/requestData.json', JSON.stringify(requestData), 'utf8', (err) => {
+      fs.writeFileSync('./data/requestData.json', JSON.stringify(requestData), 'utf8', (err) => {
         if (err) throw err;
         console.log('requestData saved!');
       })
