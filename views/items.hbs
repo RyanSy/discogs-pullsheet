@@ -1,6 +1,22 @@
-<h1>Items</h1>
-{{#each orders}}
-  <ul>
-      <li>{{this.items.description}}</li>
-  </ul>
-{{/each}}
+<h3>Discogs Pullsheet</h3>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th scope="col">Order ID</th>
+        <th scope="col">Items</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each .}}
+        <tr>
+          <th scope="row">{{id}}</th>
+          <td>
+            {{#items}}
+              {{description}}<br>
+              Location: {{item_location}}<br>
+            {{/items}}
+          </td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
