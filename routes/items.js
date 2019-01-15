@@ -5,9 +5,6 @@ var accessData = require('../data/accessData.json');
 
 /* GET items. */
 router.get('/', function(req, res, next) {
-
-  console.log('items route called');
-
   var mp = new Discogs(accessData).marketplace();
   mp.getOrders({status: 'Payment Pending'}, function(err, data) {
     if (err) {
