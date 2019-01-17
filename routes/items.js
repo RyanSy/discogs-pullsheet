@@ -6,10 +6,10 @@ var accessData = require('../data/accessData.json');
 /* GET items. */
 router.get('/', function(req, res, next) {
   var mp = new Discogs(accessData).marketplace();
-  mp.getOrders({status: 'Payment Pending'}, function(err, data) {
+  mp.getOrders({status: 'Payment Received'}, function(err, data) {
     if (err) {
       console.log(err);
-      res.send('Error');
+      res.send('Error, please refresh this page.');
     }
     var orders = data.orders;
     var ordersArray = [];
