@@ -3,8 +3,19 @@ var router = express.Router();
 var Discogs = require('disconnect').Client;
 var accessData = require('../data/accessData.json');
 
-/* GET items. */
 router.get('/', function(req, res, next) {
+  /* GET identity */
+  var dis = new Discogs(accessData);
+  var username;
+  dis.getIdentity(function(err, data) {
+    if (err) {
+      console.log(err);
+      res.send('Error');
+    }
+		username = data.username;
+	});
+
+  /* GET items. */
   var mp = new Discogs(accessData).marketplace();
   mp.getOrders({status: 'Payment Received'}, function(err, data) {
     if (err) {
@@ -28,8 +39,8 @@ router.get('/', function(req, res, next) {
       }
       ordersArray.push(order);
     }
-
-    res.render('items', ordersArray);
+    console.log('ordersArray.length: ', ordersArray.length);
+    res.render('items', {username: username, orders: ordersArray});
   });
 });
 

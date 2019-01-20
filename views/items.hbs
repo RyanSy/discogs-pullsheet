@@ -1,19 +1,18 @@
 <h3>Discogs Pullsheet</h3>
+<h6>Signed in as: {{username}}</h6>
   <table class="table table-striped">
-    <thead>
-      <tr>
-        <th scope="col">Order ID</th>
-        <th scope="col">Items</th>
-      </tr>
-    </thead>
     <tbody>
-      {{#each .}}
+      {{#each orders}}
         <tr>
-          <th scope="row">{{id}}</th>
           <td>
+            <h6><span class="font-weight-bold mt-5">Order ID: </span>{{id}}</h6><br>
             {{#items}}
-              {{description}}<br>
-              <span class="font-weight-bold">Location:</span> {{item_location}}<br>
+            <ul>
+              <li>
+                {{description}}<br>
+                <span class="font-weight-bold">Location: </span>{{item_location}}<br>
+              </li>
+            </ul>
             {{/items}}
           </td>
         </tr>
