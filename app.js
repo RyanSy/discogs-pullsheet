@@ -11,7 +11,6 @@ var session = require('express-session');
 var indexRouter = require('./routes/index');
 var authorizeRouter = require('./routes/authorize');
 var callbackRouter = require('./routes/callback');
-var identityRouter = require('./routes/identity');
 var itemsRouter = require('./routes/items');
 
 var app = express();
