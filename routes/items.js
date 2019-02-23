@@ -1,9 +1,10 @@
 var express = require('express');
 var router = express.Router();
 var Discogs = require('disconnect').Client;
-var accessData = require('../data/accessData.json');
 
 router.get('/', function(req, res, next) {
+  var accessData = req.session.accessData;
+
   /* GET identity */
   var dis = new Discogs(accessData);
   var username;
@@ -39,7 +40,6 @@ router.get('/', function(req, res, next) {
       }
       ordersArray.push(order);
     }
-    console.log('ordersArray.length: ', ordersArray.length);
     res.render('items', {username: username, orders: ordersArray});
   });
 });

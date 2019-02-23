@@ -1,16 +1,14 @@
 var express = require('express');
 var router = express.Router();
-var accessData = require('../data/accessData.json');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  if (accessData.level == 2) {
-    res.redirect(process.env.HOST + 'items');
-  } else {
+  if (!req.session.accessData) {
     res.render('index', {
-      title: 'Discogs Pullsheet',
       host: process.env.HOST
     });
+  } else {
+    res.redirect(process.env.HOST + 'items');
   }
 });
 

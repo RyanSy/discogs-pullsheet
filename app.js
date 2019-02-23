@@ -4,6 +4,9 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var favicon = require('serve-favicon');
+var dotenv = require('dotenv');
+dotenv.load();
+var session = require('express-session');
 
 var indexRouter = require('./routes/index');
 var authorizeRouter = require('./routes/authorize');
@@ -23,14 +26,20 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
+app.use(session({
+  secret: 'randomSecretString123!',
+  cookie: {
+    maxAge: 6000000
+  },
+  resave: false,
+  saveUninitialized: true
+}));
 
 app.use('/', indexRouter);
 app.use('/authorize', authorizeRouter);
 app.use('/callback', callbackRouter);
 app.use('/identity', identityRouter);
 app.use('/items', itemsRouter);
-
-console.log("Running!");
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -47,5 +56,7 @@ app.use(function(err, req, res, next) {
   res.status(err.status || 500);
   res.render('error');
 });
+
+console.log("Running!");
 
 module.exports = app;

@@ -1,4 +1,1 @@
-* TODO:
-- MongoDB Atlas
-- Data persistence
--Add images option
+Under construction.

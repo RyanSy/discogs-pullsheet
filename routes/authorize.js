@@ -3,7 +3,6 @@ var router = express.Router();
 var Discogs = require('disconnect').Client;
 var dotenv = require('dotenv');
 dotenv.load();
-var fs = require('fs');
 
 /* GET authorization. */
 router.get('/', function(req, res, next) {
@@ -19,10 +18,7 @@ router.get('/', function(req, res, next) {
       }
 			// Persist "requestData" here so that the callback handler can
 			// access it later after returning from the authorize url
-      fs.writeFileSync('./data/requestData.json', JSON.stringify(requestData), 'utf8', (err) => {
-        if (err) throw err;
-        console.log('requestData saved!');
-      })
+      req.session.requestData = requestData;
 			res.redirect(requestData.authorizeUrl);
 		}
 	);
