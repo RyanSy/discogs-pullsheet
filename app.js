@@ -7,6 +7,7 @@ var favicon = require('serve-favicon');
 var dotenv = require('dotenv');
 dotenv.load();
 var session = require('express-session');
+var MongoDBStore = require('connect-mongodb-session')(session);
 
 var indexRouter = require('./routes/index');
 var authorizeRouter = require('./routes/authorize');
@@ -14,6 +15,13 @@ var callbackRouter = require('./routes/callback');
 var itemsRouter = require('./routes/items');
 
 var app = express();
+var store = new MongoDBStore({
+  uri: 'mongodb://' + process.env.DB_USER + ':' + process.env.DB_PASSWORD + '@ds219095.mlab.com:19095/discogs-pullsheet',
+  collection: 'sessions'
+});
+ store.on('error', function(error) {
+   console.log(error);
+ });
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -25,12 +33,13 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-app.use(session({
+app.use(require('express-session')({
   secret: 'randomSecretString123!',
   cookie: {
     maxAge: 6000000
   },
-  resave: false,
+  store: store,
+  resave: true,
   saveUninitialized: true
 }));
 
