@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var Discogs = require('disconnect').Client;
+var moment = require('moment');
 
 router.get('/', function(req, res, next) {
   var accessData = req.session.accessData;
@@ -11,14 +12,14 @@ router.get('/', function(req, res, next) {
   dis.getIdentity(function(err, data) {
     if (err) {
       console.log(err);
-      res.send('Error');
+      res.send('Error - You must authenticate to access this resource.');
     }
 		username = data.username;
 	});
 
   /* GET items. */
   var mp = new Discogs(accessData).marketplace();
-  mp.getOrders({status: 'Payment Received'}, function(err, data) {
+  mp.getOrders({status: 'Payment Received' || 'Payment Pending'}, function(err, data) {
     if (err) {
       console.log(err);
       res.send('Error, please refresh this page.');
@@ -28,7 +29,7 @@ router.get('/', function(req, res, next) {
     for (var i = 0; i < orders.length; i++) {
       var order = {};
       order.id = orders[i].id;
-      order.created = orders[i].created;
+      order.created = moment(orders[i].created).format('lll');
       order.status = orders[i].status;
       order.items = [];
       for (var j = 0; j < orders[i].items.length; j++) {

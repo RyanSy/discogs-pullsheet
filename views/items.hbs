@@ -5,7 +5,11 @@
       {{#each orders}}
         <tr>
           <td>
-            <h6><span class="font-weight-bold mt-5">Order ID: </span>{{id}}</h6><br>
+            <h6>
+              <span class="font-weight-bold mt-5">Order ID: </span>{{id}}<br>
+              <span class="font-weight-bold">Created: </span>{{created}}<br>
+              <span class="font-weight-bold">Status: </span>{{status}}
+            </h6><br>
             {{#items}}
             <ul>
               <li>
