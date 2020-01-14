@@ -33,6 +33,7 @@ router.get('/', function(req, res, next) {
         order.id = orders[i].id;
         order.date = orders[i].created;
         order.created = moment(orders[i].created).format('lll');
+        order.status = orders[i].status;
         order.items = [];
         for (var j = 0; j < orders[i].items.length; j++) {
           var item = {};
