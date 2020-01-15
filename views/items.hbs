@@ -13,7 +13,17 @@
             {{#items}}
             <ul>
               <li>
-                {{description}}<br>
+                <div class="container">
+                  <div class="row">
+                    <div class="col-4">
+                      <img class="img-fluid" src="{{thumbnail}}" alt="{{description}}">
+                    </div>
+                    <div class="col-8">
+                    {{description}}
+                    </div>
+                  </div>
+                </div>
+                <br>
                 <span class="font-weight-bold">Location: </span>{{item_location}}<br>
               </li>
             </ul>
