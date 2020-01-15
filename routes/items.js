@@ -25,6 +25,7 @@ router.get('/', function(req, res, next) {
       console.log(err);
       res.send('Error, please refresh this page.');
     }
+
     var orders = data.orders;
     var paymentPenddingArr = [];
     for (var i = 0; i < orders.length; i++) {
@@ -51,6 +52,7 @@ router.get('/', function(req, res, next) {
         console.log(err);
         res.send('Error, please refresh this page.');
       }
+
       var orders = data.orders;
       var paymentReceivedArr = [];
       for (var i = 0; i < orders.length; i++) {
@@ -71,11 +73,11 @@ router.get('/', function(req, res, next) {
           paymentReceivedArr.push(order);
         }
       }
-
+      // create payment pending array and join
       var allOrdersArr = paymentPenddingArr.concat(paymentReceivedArr);
-      var sortedArr = allOrdersArr.sort((a,b) => new moment(a.date.format('YYYYMMDD')) - new moment(b.date.format('YYYYMMDD')));
+      // var sortedArr = allOrdersArr.sort((a,b) => new moment(a.date.format('YYYYMMDD')) - new moment(b.date.format('YYYYMMDD')));
 
-       res.render('items', {username: username, orders: sortedArr});
+       res.render('items', {username: username, orders: allOrdersArr});
     }); // end get 'Payment Received'
   }) // end get 'Payment Pending'
 });
