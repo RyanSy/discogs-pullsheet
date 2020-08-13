@@ -1,79 +1,58 @@
 var express = require('express');
 var router = express.Router();
+const axios = require('axios');
+var qs = require('qs');
 var Discogs = require('disconnect').Client;
 var moment = require('moment');
-const axios = require('axios');
 var dotenv = require('dotenv');
 dotenv.load();
 
 router.get('/', function(req, res, next) {
   console.log('\nitems route called\n');
   var accessData = req.session.accessData;
-
-  /* GET identity */
   var dis = new Discogs(accessData);
+  var mp = new Discogs(accessData).marketplace();
   var username;
+  var paypal_transactions_arr = [];
+  var start_date = moment().subtract(7, 'days').format();
+  var end_date = moment().format();
+
+  // get discogs username
   dis.getIdentity(function(err, data) {
     if (err) {
-      console.log(err);
+      console.log(`\nerror getting discogs username:\n ${err}`);
       res.send('Error - You must authenticate to access this resource.');
     }
 		username = data.username;
 	});
 
-  /* generate access token */
-  var paypal_access_token;
+  // generate paypal access token & get transaction info
   axios({
-      method: 'post',
-      url:'https://api.paypal.com/v1/oauth2/token',
-      headers: {
-        'Authorization': `Bearer ${process.env.PAYPAL_ACCESS_TOKEN}` ,
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-  })
-    .then(function(response) {
-      paypal_access_token = response.access_token;
-    })
-    .catch(function(error) {
-      if (error.response) {
-       // The request was made and the server responded with a status code
-       // that falls out of the range of 2xx
-       console.log(error.response.data);
-       console.log(error.response.status);
-       console.log(error.response.headers);
-     } else if (error.request) {
-       // The request was made but no response was received
-       // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-       // http.ClientRequest in node.js
-       console.log(error.request);
-     } else {
-       // Something happened in setting up the request that triggered an Error
-       console.log('Error', error.message);
-     }
-      console.log(error.config);
-    });
-
-  /* GET items. */
-  var mp = new Discogs(accessData).marketplace();
-
-  // get paypal transaction id and shipping address
-  var paypal_transactions_arr = [];
-  var start_date = moment().subtract(7, 'days').format();
-  var end_date = moment().format();
-  axios({
-    method: 'get',
-    url: 'https://api.paypal.com/v1/reporting/transactions',
+    method: 'post',
+    url:'https://api.paypal.com/v1/oauth2/token',
     headers: {
-      'Authorization': `Bearer ${paypal_access_token}`,
-      'Content-Type': 'application/json'
+      'Authorization': `Basic ${process.env.PAYPAL_AUTHORIZATION_TOKEN}` ,
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
-    params: {
-      transaction_type: 'T0007',
-      start_date: start_date,
-      end_date: end_date,
-      fields: 'shipping_info'
-    }
+    data: qs.stringify({ grant_type: 'client_credentials' })
   })
+  .then(function(response) {
+    // get paypal transaction info
+    var paypal_access_token = response.data.access_token;
+    axios({
+      method: 'get',
+      url: 'https://api.paypal.com/v1/reporting/transactions',
+      headers: {
+        'Authorization': `Bearer ${paypal_access_token}`,
+        'Content-Type': 'application/json'
+      },
+      params: {
+        transaction_type: 'T0007',
+        start_date: start_date,
+        end_date: end_date,
+        fields: 'shipping_info'
+      }
+    })
     .then(function(response) {
       for (var i = 0; i < (response.data.transaction_details).length; i++) {
         var paypal_transaction_data = {
@@ -91,30 +70,20 @@ router.get('/', function(req, res, next) {
       }
     })
     .catch(function(error) {
-      if (error.response) {
-       // The request was made and the server responded with a status code
-       // that falls out of the range of 2xx
-       console.log(error.response.data);
-       console.log(error.response.status);
-       console.log(error.response.headers);
-     } else if (error.request) {
-       // The request was made but no response was received
-       // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-       // http.ClientRequest in node.js
-       console.log(error.request);
-     } else {
-       // Something happened in setting up the request that triggered an Error
-       console.log('Error', error.message);
-     }
-      console.log(error.config);
-    });
-    // end get Paypal Transaction Info
+      console.log('\nerror getting paypal transactions\n');
+      catchError(error);
+    }); // end get paypal transaction info
+  })
+  .catch(function(error) {
+    console.log('\nerror getting paypal access token...\n');
+    catchError(error);
+  }); // end generate paypal access token
 
-  /* Payment Pending orders */
+  // get payment pending orders
   mp.getOrders({status: 'Payment Pending'}, function(err, data) {
     console.log('\ngetting payment pending orders\n');
     if (err) {
-      console.log(err);
+      console.log(`\nerror getting payment pending orders:\n ${err}`);
       res.send('Error, please refresh this page.');
     }
     var orders = data.orders;
@@ -146,11 +115,11 @@ router.get('/', function(req, res, next) {
       }
     }
 
-    /* Payment Received orders */
+    // get payment received orders
     mp.getOrders({status: 'Payment Received'}, function(err, data) {
       console.log('\ngetting payment received orders\n');
       if (err) {
-        console.log(err);
+        console.log(`\nerror getting payment received orders:\n ${err}`);
         res.send('Error, please refresh this page.');
       }
       var orders = data.orders;
@@ -182,11 +151,31 @@ router.get('/', function(req, res, next) {
         }
       }
 
-      // create payment pending array and join
+      // create all orders array and join
       var allOrdersArr = paymentPenddingArr.concat(paymentReceivedArr);
-       res.render('items', {username: username, orders: allOrdersArr});
+      res.render('items', {username: username, orders: allOrdersArr});
     }); // end get 'Payment Received'
   }); // end get 'Payment Pending'
 }); // end items route
+
+// error handler
+function catchError(error) {
+  if (error.response) {
+   // The request was made and the server responded with a status code
+   // that falls out of the range of 2xx
+   console.log(error.response.data);
+   console.log(error.response.status);
+   console.log(error.response.headers);
+ } else if (error.request) {
+   // The request was made but no response was received
+   // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+   // http.ClientRequest in node.js
+   console.log(error.request);
+ } else {
+   // Something happened in setting up the request that triggered an Error
+   console.log('Error', error.message);
+ }
+  console.log(error.config);
+}
 
 module.exports = router;

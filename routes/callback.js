@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var Discogs = require('disconnect').Client;
 
-/* GET callback. */
+// get callback
 router.get('/', function(req, res, next) {
   var requestData = req.session.requestData;
   var oAuth = new Discogs(requestData).oauth();

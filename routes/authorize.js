@@ -4,7 +4,7 @@ var Discogs = require('disconnect').Client;
 var dotenv = require('dotenv');
 dotenv.load();
 
-/* GET authorization. */
+// get authorization
 router.get('/', function(req, res, next) {
   var oAuth = new Discogs().oauth();
 	oAuth.getRequestToken(
