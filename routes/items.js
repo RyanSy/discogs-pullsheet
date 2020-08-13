@@ -21,6 +21,38 @@ router.get('/', function(req, res, next) {
 		username = data.username;
 	});
 
+  /* generate access token */
+  var paypal_access_token;
+  axios({
+      method: 'post',
+      url:'https://api.paypal.com/v1/oauth2/token',
+      headers: {
+        'Authorization': `Bearer ${process.env.PAYPAL_ACCESS_TOKEN}` ,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+  })
+    .then(function(response) {
+      paypal_access_token = response.access_token;
+    })
+    .catch(function(error) {
+      if (error.response) {
+       // The request was made and the server responded with a status code
+       // that falls out of the range of 2xx
+       console.log(error.response.data);
+       console.log(error.response.status);
+       console.log(error.response.headers);
+     } else if (error.request) {
+       // The request was made but no response was received
+       // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+       // http.ClientRequest in node.js
+       console.log(error.request);
+     } else {
+       // Something happened in setting up the request that triggered an Error
+       console.log('Error', error.message);
+     }
+      console.log(error.config);
+    });
+
   /* GET items. */
   var mp = new Discogs(accessData).marketplace();
 
@@ -32,7 +64,7 @@ router.get('/', function(req, res, next) {
     method: 'get',
     url: 'https://api.paypal.com/v1/reporting/transactions',
     headers: {
-      'Authorization': `Bearer ${process.env.PAYPAL_ACCESS_TOKEN}`,
+      'Authorization': `Bearer ${paypal_access_token}`,
       'Content-Type': 'application/json'
     },
     params: {
