@@ -13,9 +13,6 @@ router.get('/', function(req, res, next) {
   var dis = new Discogs(accessData);
   var mp = new Discogs(accessData).marketplace();
   var username;
-  var paypal_transactions_arr = [];
-  var start_date = moment().subtract(7, 'days').format();
-  var end_date = moment().format();
 
   // get discogs username
   dis.getIdentity(function(err, data) {
@@ -26,7 +23,7 @@ router.get('/', function(req, res, next) {
 		username = data.username;
 	});
 
-  // generate paypal access token & get transaction info
+  // generate paypal access token
   axios({
     method: 'post',
     url:'https://api.paypal.com/v1/oauth2/token',
@@ -37,8 +34,10 @@ router.get('/', function(req, res, next) {
     data: qs.stringify({ grant_type: 'client_credentials' })
   })
   .then(function(response) {
-    // get paypal transaction info
     var paypal_access_token = response.data.access_token;
+    var start_date = moment().subtract(7, 'days').format();
+    var end_date = moment().format();
+    // get paypal transaction info
     axios({
       method: 'get',
       url: 'https://api.paypal.com/v1/reporting/transactions',
@@ -54,6 +53,7 @@ router.get('/', function(req, res, next) {
       }
     })
     .then(function(response) {
+      var paypal_transactions_arr = [];
       for (var i = 0; i < (response.data.transaction_details).length; i++) {
         var paypal_transaction_data = {
           transaction_id: response.data.transaction_details[i].transaction_info.transaction_id,
@@ -68,6 +68,89 @@ router.get('/', function(req, res, next) {
         };
         paypal_transactions_arr.push(paypal_transaction_data);
       }
+      return paypal_transactions_arr;
+    })
+    .then(function(paypal_transactions_arr) {
+      console.log(paypal_transactions_arr);
+      // get payment pending orders
+      mp.getOrders({status: 'Payment Pending'}, function(err, data) {
+        console.log('\ngetting payment pending orders\n');
+        if (err) {
+          console.log(`\nerror getting payment pending orders:\n ${err}`);
+          res.send('Error, please refresh this page.');
+        }
+        var orders = data.orders;
+        var paymentPenddingArr = [];
+        for (var i = 0; i < orders.length; i++) {
+          if (moment(orders[i].created) > moment('2019-12-31T23:59:59-08:00')) {
+            var order = {};
+            var order_id = orders[i].id;
+            var paypal_data = {};
+            for (var j = 0; j < paypal_transactions_arr.length; j++) {
+              if (order_id == paypal_transactions_arr[j].invoice_id) {
+                paypal_data = paypal_transactions_arr[j];
+              }
+            }
+            order.id = order_id;
+            order.date = orders[i].created;
+            order.created = moment(orders[i].created).format('lll');
+            order.status = orders[i].status;
+            order.additional_instructions = orders[i].additional_instructions;
+            order.shipping_address = orders[i].shipping_address;
+            order.paypal_data = paypal_data;
+            order.items = [];
+            for (var j = 0; j < orders[i].items.length; j++) {
+              var item = {};
+              item.item_location = orders[i].items[j].item_location;
+              item.description = orders[i].items[j].release.description;
+              item.thumbnail = orders[i].items[j].release.thumbnail;
+              order.items.push(item);
+            }
+            paymentPenddingArr.push(order);
+          }
+        }
+
+        // get payment received orders
+        mp.getOrders({status: 'Payment Received'}, function(err, data) {
+          console.log('\ngetting payment received orders\n');
+          if (err) {
+            console.log(`\nerror getting payment received orders:\n ${err}`);
+            res.send('Error, please refresh this page.');
+          }
+          var orders = data.orders;
+          var paymentReceivedArr = [];
+          for (var i = 0; i < orders.length; i++) {
+            if (moment(orders[i].created) > moment('2019-12-31T23:59:59-08:00')) {
+              var order = {};
+              var order_id = orders[i].id;
+              order.id = order_id;
+              order.date = orders[i].created;
+              order.created = moment(orders[i].created).format('lll');
+              order.status = orders[i].status;
+              order.additional_instructions = orders[i].additional_instructions;
+              order.shipping_address = orders[i].shipping_address;
+              for (var j = 0; j < paypal_transactions_arr.length; j++) {
+                if (order_id == paypal_transactions_arr[j].invoice_id) {
+                  order.paypal_data = paypal_transactions_arr[j];
+                }
+              }
+              order.items = [];
+              for (var j = 0; j < orders[i].items.length; j++) {
+                var item = {};
+                item.item_location = orders[i].items[j].item_location;
+                item.description = orders[i].items[j].release.description;
+                item.thumbnail = orders[i].items[j].release.thumbnail;
+                order.items.push(item);
+              }
+              paymentReceivedArr.push(order);
+            }
+          }
+
+          // create all orders array and join
+          var allOrdersArr = paymentPenddingArr.concat(paymentReceivedArr);
+          res.render('items', {username: username, orders: allOrdersArr});
+        }); // end get 'Payment Received'
+      }); // end get 'Payment Pending'
     })
     .catch(function(error) {
       console.log('\nerror getting paypal transactions\n');
@@ -79,83 +162,6 @@ router.get('/', function(req, res, next) {
     catchError(error);
   }); // end generate paypal access token
 
-  // get payment pending orders
-  mp.getOrders({status: 'Payment Pending'}, function(err, data) {
-    console.log('\ngetting payment pending orders\n');
-    if (err) {
-      console.log(`\nerror getting payment pending orders:\n ${err}`);
-      res.send('Error, please refresh this page.');
-    }
-    var orders = data.orders;
-    var paymentPenddingArr = [];
-    for (var i = 0; i < orders.length; i++) {
-      if (moment(orders[i].created) > moment('2019-12-31T23:59:59-08:00')) {
-        var order = {};
-        var order_id = orders[i].id;
-        order.id = order_id;
-        order.date = orders[i].created;
-        order.created = moment(orders[i].created).format('lll');
-        order.status = orders[i].status;
-        order.additional_instructions = orders[i].additional_instructions;
-        order.shipping_address = orders[i].shipping_address;
-        for (var j = 0; j < paypal_transactions_arr.length; j++) {
-          if (order_id == paypal_transactions_arr[j].invoice_id) {
-            order.paypal_data = paypal_transactions_arr[j];
-          }
-        }
-        order.items = [];
-        for (var j = 0; j < orders[i].items.length; j++) {
-          var item = {};
-          item.item_location = orders[i].items[j].item_location;
-          item.description = orders[i].items[j].release.description;
-          item.thumbnail = orders[i].items[j].release.thumbnail;
-          order.items.push(item);
-        }
-        paymentPenddingArr.push(order);
-      }
-    }
-
-    // get payment received orders
-    mp.getOrders({status: 'Payment Received'}, function(err, data) {
-      console.log('\ngetting payment received orders\n');
-      if (err) {
-        console.log(`\nerror getting payment received orders:\n ${err}`);
-        res.send('Error, please refresh this page.');
-      }
-      var orders = data.orders;
-      var paymentReceivedArr = [];
-      for (var i = 0; i < orders.length; i++) {
-        if (moment(orders[i].created) > moment('2019-12-31T23:59:59-08:00')) {
-          var order = {};
-          var order_id = orders[i].id;
-          order.id = order_id;
-          order.date = orders[i].created;
-          order.created = moment(orders[i].created).format('lll');
-          order.status = orders[i].status;
-          order.additional_instructions = orders[i].additional_instructions;
-          order.shipping_address = orders[i].shipping_address;
-          for (var j = 0; j < paypal_transactions_arr.length; j++) {
-            if (order_id == paypal_transactions_arr[j].invoice_id) {
-              order.paypal_data = paypal_transactions_arr[j];
-            }
-          }
-          order.items = [];
-          for (var j = 0; j < orders[i].items.length; j++) {
-            var item = {};
-            item.item_location = orders[i].items[j].item_location;
-            item.description = orders[i].items[j].release.description;
-            item.thumbnail = orders[i].items[j].release.thumbnail;
-            order.items.push(item);
-          }
-          paymentReceivedArr.push(order);
-        }
-      }
-
-      // create all orders array and join
-      var allOrdersArr = paymentPenddingArr.concat(paymentReceivedArr);
-      res.render('items', {username: username, orders: allOrdersArr});
-    }); // end get 'Payment Received'
-  }); // end get 'Payment Pending'
 }); // end items route
 
 // error handler
