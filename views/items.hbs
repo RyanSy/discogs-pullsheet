@@ -9,7 +9,10 @@
               <span class="font-weight-bold mt-5">Order ID: </span><a href="https://www.discogs.com/sell/order/{{id}}" target="_blank">{{id}}</a><br>
               <span class="font-weight-bold">Created: </span>{{created}}<br>
               <span class="font-weight-bold">Status: </span>{{status}}<br>
+              <span class="font-weight-bold">Total: </span>${{total}}<br>
               <span class="font-weight-bold">Additional Instructions: </span>{{additional_instructions}}<br>
+              <span class="font-weight-bold">Shipping Method: </span>{{shipping_method}}<br>
+              <span class="font-weight-bold">Shipping Amount: </span>${{shipping_amount}}<br>
               <span class="font-weight-bold">Discogs Shipping Address: </span><pre>{{shipping_address}}</pre>
               {{#if paypal_data.name}}
                 <span class="font-weight-bold">PayPal Shipping Address: </span><pre>{{paypal_data.name}}<br>{{paypal_data.address_line1}}<br>{{paypal_data.address_line2}}<br>{{paypal_data.city}}, {{paypal_data.state}} {{paypal_data.postal_code}}<br>{{paypal_data.country_code}}</pre>

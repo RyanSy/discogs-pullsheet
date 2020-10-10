@@ -94,7 +94,10 @@ router.get('/', function(req, res, next) {
         order.date = orders[i].created;
         order.created = moment(orders[i].created).format('lll');
         order.status = orders[i].status;
+        order.total = orders[i].total.value;
         order.additional_instructions = orders[i].additional_instructions;
+        order.shipping_method = orders[i].shipping.method;
+        order.shipping_amount = orders[i].shipping.value;
         order.shipping_address = orders[i].shipping_address;
         for (var j = 0; j < paypal_transactions_arr.length; j++) {
           if (order_id == paypal_transactions_arr[j].invoice_id) {
@@ -130,7 +133,10 @@ router.get('/', function(req, res, next) {
           order.date = orders[i].created;
           order.created = moment(orders[i].created).format('lll');
           order.status = orders[i].status;
+          order.total = orders[i].total.value;
           order.additional_instructions = orders[i].additional_instructions;
+          order.shipping_method = orders[i].shipping.method;
+          order.shipping_amount = orders[i].shipping.value;
           order.shipping_address = orders[i].shipping_address;
           for (var j = 0; j < paypal_transactions_arr.length; j++) {
             if (order_id == paypal_transactions_arr[j].invoice_id) {
