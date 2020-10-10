@@ -4,8 +4,6 @@ const axios = require('axios');
 var qs = require('qs');
 var Discogs = require('disconnect').Client;
 var moment = require('moment');
-var dotenv = require('dotenv');
-dotenv.load();
 
 router.get('/', function(req, res, next) {
   console.log('\nitems route called\n');

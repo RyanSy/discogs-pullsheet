@@ -1,8 +1,6 @@
 var express = require('express');
 var router = express.Router();
 var Discogs = require('disconnect').Client;
-var dotenv = require('dotenv');
-dotenv.load();
 
 // get authorization
 router.get('/', function(req, res, next) {
