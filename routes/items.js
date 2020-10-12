@@ -7,7 +7,7 @@ var moment = require('moment');
 
 router.get('/', function(req, res, next) {
   console.log('\nitems route called\n');
-  var accessData = req.session.accessData;git
+  var accessData = req.session.accessData;
   var dis = new Discogs(accessData);
   var mp = new Discogs(accessData).marketplace();
   var username;
