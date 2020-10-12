@@ -4,16 +4,13 @@ const axios = require('axios');
 var qs = require('qs');
 var Discogs = require('disconnect').Client;
 var moment = require('moment');
-var start_date = moment().subtract(7, 'days').format();
-var end_date = moment().format();
 
 router.get('/', function(req, res, next) {
   console.log('\nitems route called\n');
-  var accessData = req.session.accessData;
+  var accessData = req.session.accessData;git
   var dis = new Discogs(accessData);
   var mp = new Discogs(accessData).marketplace();
   var username;
-  var paypal_transactions_arr = [];
 
   // get discogs username
   dis.getIdentity(function(err, data) {
