@@ -36,13 +36,13 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-app.use(require('express-session')({
-  secret: 'randomSecretString123!',
+app.use(session({
+  secret: process.env.SECRET,
   cookie: {
-    maxAge: 6000000
+    maxAge: 2.628e+9
   },
   store: store,
-  resave: true,
+  resave: false,
   saveUninitialized: true
 }));
 

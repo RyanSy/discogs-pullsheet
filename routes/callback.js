@@ -4,7 +4,6 @@ var Discogs = require('disconnect').Client;
 
 // get callback
 router.get('/', function(req, res, next) {
-  console.log('req.session:', req.session);
   var requestData = req.session.requestData;
   var oAuth = new Discogs(requestData).oauth();
 	oAuth.getAccessToken(
