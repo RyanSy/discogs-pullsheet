@@ -7,7 +7,6 @@ router.get('/', function(req, res, next) {
   if (!req.session.accessData) {
     res.render('index', {
       host: process.env.HOST,
-      message: 'You must be logged in to do that.'
     });
   } else {
     res.redirect(process.env.HOST + 'items');
