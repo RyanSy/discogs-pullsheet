@@ -91,6 +91,7 @@ router.get('/', function(req, res, next) {
             order.id = order_id;
             order.date = orders[i].created;
             order.created = moment(orders[i].created).format('lll');
+            order.updated = moment(orders[i].last_activity).format('lll');
             order.status = orders[i].status;
             order.total = orders[i].total.value;
             order.additional_instructions = orders[i].additional_instructions;
@@ -103,6 +104,7 @@ router.get('/', function(req, res, next) {
               var item = {};
               item.item_location = orders[i].items[j].item_location;
               item.description = orders[i].items[j].release.description;
+              item.price = orders[i].items[j].price.value;
               item.thumbnail = orders[i].items[j].release.thumbnail;
               order.items.push(item);
             }
@@ -126,22 +128,20 @@ router.get('/', function(req, res, next) {
               order.id = order_id;
               order.date = orders[i].created;
               order.created = moment(orders[i].created).format('lll');
+              order.updated = moment(orders[i].last_activity).format('lll');
               order.status = orders[i].status;
               order.total = orders[i].total.value;
+              order.additional_instructions = orders[i].additional_instructions;
               order.shipping_method = orders[i].shipping.method;
               order.shipping_amount = orders[i].shipping.value;
-              order.additional_instructions = orders[i].additional_instructions;
               order.shipping_address = orders[i].shipping_address;
-              for (var j = 0; j < paypal_transactions_arr.length; j++) {
-                if (order_id == paypal_transactions_arr[j].invoice_id) {
-                  order.paypal_data = paypal_transactions_arr[j];
-                }
-              }
+              order.paypal_data = paypal_data;
               order.items = [];
               for (var j = 0; j < orders[i].items.length; j++) {
                 var item = {};
                 item.item_location = orders[i].items[j].item_location;
                 item.description = orders[i].items[j].release.description;
+                item.price = orders[i].items[j].price.value;
                 item.thumbnail = orders[i].items[j].release.thumbnail;
                 order.items.push(item);
               }
