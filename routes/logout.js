@@ -3,13 +3,13 @@ var router = express.Router();
 
 // get homepage
 router.get('/', function(req, res, next) {
-  if (!req.session.accessData) {
-    res.render('index', {
-      host: process.env.HOST,
-    });
-  } else {
+  console.log('logout route called');
+  req.session.destroy(function(err) {
+    if (err) {
+      res.send('Error logging out.');
+    }
     res.redirect(process.env.HOST + 'items');
-  }
+  })
 });
 
 module.exports = router;

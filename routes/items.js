@@ -15,8 +15,8 @@ router.get('/', function(req, res, next) {
   // get discogs username
   dis.getIdentity(function(err, data) {
     if (err) {
-      console.log(`\nerror getting discogs username:\n ${err}`);
-      res.send('Error - You must authenticate to access this resource.');
+      console.log('error getting discogs username');
+      res.redirect(process.env.HOST);
     }
 		username = data.username;
 	});
