@@ -125,6 +125,12 @@ router.get('/', function(req, res, next) {
             if (moment(orders[i].created) > moment('2019-12-31T23:59:59-08:00')) {
               var order = {};
               var order_id = orders[i].id;
+              var paypal_data = {};
+              for (var j = 0; j < paypal_transactions_arr.length; j++) {
+                if (order_id == paypal_transactions_arr[j].invoice_id) {
+                  paypal_data = paypal_transactions_arr[j];
+                }
+              }
               order.id = order_id;
               order.date = orders[i].created;
               order.created = moment(orders[i].created).format('lll');
