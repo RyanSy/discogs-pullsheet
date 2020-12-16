@@ -10,7 +10,7 @@ var favicon = require('serve-favicon');
 var session = require('express-session');
 var MongoDBStore = require('connect-mongodb-session')(session);
 var store = new MongoDBStore({
-  uri: 'mongodb://' + process.env.DB_USER + ':' + process.env.DB_PASSWORD + '@ds219095.mlab.com:19095/discogs-pullsheet',
+  uri: `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.eujqg.mongodb.net/sessions?retryWrites=true&w=majority`,
   databaseName: 'discogs-pullsheet',
   collection: 'sessions',
   expires: 1000 * 60 * 60 * 24 * 30
