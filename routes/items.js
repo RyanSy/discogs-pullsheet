@@ -99,6 +99,23 @@ router.get('/', function(req, res, next) {
             order.shipping_amount = orders[i].shipping.value;
             order.shipping_address = orders[i].shipping_address;
             order.paypal_data = paypal_data;
+            order.messages = [];
+            mp.getOrderMessages(order_id, function(err, data) {
+              console.log('getting order messages');
+              if (err) {
+                console.log('error getting order messages' , err);
+                res.send('Error, please refresh this page.');
+              }
+              for (var k = 0; k < data.messages.length; k++) {
+                if (data.messages[k].type === 'message') {
+                  var messageObj = {};
+                  messageObj.from = data.messages[k].from.username;
+                  messageObj.message = data.messages[k].message;
+                  messageObj.timestamp = moment(data.messages[k].timestamp).format('MMM D, YYYY h:mma');
+                  order.messages.push(messageObj);
+                }
+              }
+            });
             order.items = [];
             for (var j = 0; j < orders[i].items.length; j++) {
               var item = {};
@@ -142,6 +159,22 @@ router.get('/', function(req, res, next) {
               order.shipping_amount = orders[i].shipping.value;
               order.shipping_address = orders[i].shipping_address;
               order.paypal_data = paypal_data;
+              mp.getOrderMessages(order_id, function(err, data) {
+                console.log('getting order messages');
+                if (err) {
+                  console.log('error getting order messages' , err);
+                  res.send('Error, please refresh this page.');
+                }
+                for (var k = 0; k < data.messages.length; k++) {
+                  if (data.messages[k].type === 'message') {
+                    var messageObj = {};
+                    messageObj.from = data.messages[k].from.username;
+                    messageObj.message = data.messages[k].message;
+                    messageObj.timestamp = moment(data.messages[k].timestamp).format('MMM D, YYYY h:mma');
+                    order.messages.push(messageObj);
+                  }
+                }
+              });
               order.items = [];
               for (var j = 0; j < orders[i].items.length; j++) {
                 var item = {};
