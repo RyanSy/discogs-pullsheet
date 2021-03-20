@@ -197,11 +197,13 @@ router.get('/', function(req, res, next) {
     .catch(function(error) {
       console.log('\nerror getting paypal transactions\n');
       catchError(error);
+      res.send('Server error.')
     }); // end get paypal transaction info
   })
   .catch(function(error) {
     console.log('\nerror getting paypal access token...\n');
     catchError(error);
+    res.send('Server error.')
   }); // end generate paypal access token
 }); // end items route
 
