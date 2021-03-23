@@ -48,21 +48,23 @@
             {{/if}}
           </p>
           </h6><br>
-          <span class="font-weight-bold">Messages</span>
-          {{#messages}}
-                <div class="row mt-3 mb-3">
-                  <p>
-                    <div class="col-2">
-                      <span>{{from}}:</span>
-                      <br>
-                      <span>{{timestamp}}</span>
-                    </div>
-                    <div class="col-10  ">
-                      {{message}}
-                    </div>
-                  </p>
-                </div>
-          {{/messages}}
+          {{#if messages}}
+            <span class="font-weight-bold">Messages</span>
+            {{#messages}}
+                  <div class="row mt-3 mb-3">
+                    <p>
+                      <div class="col-2">
+                        <span>{{from}}:</span>
+                        <br>
+                        <span>{{timestamp}}</span>
+                      </div>
+                      <div class="col-10  ">
+                        {{message}}
+                      </div>
+                    </p>
+                  </div>
+            {{/messages}}
+          {{/if}}
           <br>
           <span class="font-weight-bold">Items</span>
           {{#items}}

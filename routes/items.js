@@ -33,7 +33,7 @@ router.get('/', function(req, res, next) {
   })
   .then(function(response) {
     var paypal_access_token = response.data.access_token;
-    var start_date = moment().subtract(7, 'days').format();
+    var start_date = moment().subtract(3, 'days').format();
     var end_date = moment().format();
     // get paypal transaction info
     axios({
@@ -53,11 +53,12 @@ router.get('/', function(req, res, next) {
     .then(function(response) {
       var paypal_transactions_arr = [];
       for (var i = 0; i < (response.data.transaction_details).length; i++) {
+        console.log(response.data.transaction_details[i]);
         var paypal_transaction_data = {
           transaction_id: response.data.transaction_details[i].transaction_info.transaction_id,
           invoice_id: response.data.transaction_details[i].transaction_info.invoice_id,
           name: response.data.transaction_details[i].shipping_info.name,
-          address_line1: response.data.transaction_details[i].shipping_info.address.line1,
+          address_line1: (response.data.transaction_details[i].shipping_info.address.line1),
           address_line2: response.data.transaction_details[i].shipping_info.address.line2,
           city: response.data.transaction_details[i].shipping_info.address.city,
           state: response.data.transaction_details[i].shipping_info.address.state,
@@ -66,6 +67,7 @@ router.get('/', function(req, res, next) {
         };
         paypal_transactions_arr.push(paypal_transaction_data);
       }
+      console.log('paypal_transactions_arr', paypal_transactions_arr);
       return paypal_transactions_arr;
     })
     .then(function(paypal_transactions_arr) {
@@ -201,7 +203,7 @@ router.get('/', function(req, res, next) {
     }); // end get paypal transaction info
   })
   .catch(function(error) {
-    console.log('\nerror getting paypal access token...\n');
+    console.log('\nerror getting paypal access token\n');
     catchError(error);
     res.send('Server error.')
   }); // end generate paypal access token
@@ -223,6 +225,7 @@ function catchError(error) {
  } else {
    // Something happened in setting up the request that triggered an Error
    console.log('Error', error.message);
+   console.log(error);
  }
   console.log(error.config);
 }
