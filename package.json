@@ -6,6 +6,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "async": "^3.2.0",
     "axios": "^0.21.1",
     "connect-mongodb-session": "^2.1.1",
     "cookie-parser": "^1.4.4",

@@ -4,43 +4,111 @@ const axios = require('axios');
 var qs = require('qs');
 var Discogs = require('disconnect').Client;
 var moment = require('moment');
+var start_date = moment().subtract(3, 'days').format();
+var end_date = moment().format();
+var async = require('async');
 
 router.get('/', function(req, res, next) {
-  console.log('\nitems route called\n');
+  console.log('items route called');
   var accessData = req.session.accessData;
   var dis = new Discogs(accessData);
   var mp = new Discogs(accessData).marketplace();
-  var username;
 
-  // get discogs username
-  dis.getIdentity(function(err, data) {
-    if (err) {
-      console.log('error getting discogs username');
-      res.redirect(process.env.HOST);
-    }
-		username = data.username;
-	});
-
-  // generate paypal access token
-  axios({
-    method: 'post',
-    url:'https://api.paypal.com/v1/oauth2/token',
-    headers: {
-      'Authorization': `Basic ${process.env.PAYPAL_AUTHORIZATION_TOKEN}` ,
-      'Content-Type': 'application/x-www-form-urlencoded',
+  async.waterfall([
+    function(callback) {
+      console.log('waterfall 1');
+      getPayPalAccessToken()
+        .then(paypalAccessToken => {
+          console.log(`got PayPal access token: ${paypalAccessToken}`);
+          callback(null, paypalAccessToken);
+        });
     },
-    data: qs.stringify({ grant_type: 'client_credentials' })
-  })
-  .then(function(response) {
-    var paypal_access_token = response.data.access_token;
-    var start_date = moment().subtract(3, 'days').format();
-    var end_date = moment().format();
-    // get paypal transaction info
-    axios({
+    function(paypalAccessToken, callback) {
+      console.log('waterfall 2');
+      getPayPalTransactions(paypalAccessToken)
+        .then(paypalTransactionsArr => {
+          console.log(`got PayPal transactions: ${paypalTransactionsArr}`);
+          callback(null, paypalTransactionsArr);
+        })
+    },
+    function(paypalTransactionsArr, callback) {
+      console.log('waterfall 3');
+      getDiscogsOrders('Payment Pending', paypalTransactionsArr)
+        .then(paymentPendingOrders => {
+          console.log(`got payment pending orders: ${paymentPendingOrders}`);
+          callback(null, paypalTransactionsArr, paymentPendingOrders);
+        });
+    },
+    function(paypalTransactionsArr, paymentPendingOrders, callback) {
+      console.log('waterfall 4');
+      getDiscogsOrders('Payment Received', paypalTransactionsArr)
+        .then(paymentReceivedOrders => {
+          console.log(`got payment received orders: ${paymentReceivedOrders}`);
+          const allOrders = paymentPendingOrders.concat(paymentReceivedOrders);
+          callback(null, allOrders);
+        });
+    },
+    function(allOrders, callback) {
+      console.log('waterfall 5');
+      for (var a = 0; a < allOrders.length; a++) {
+        console.log(allOrders[a].id);
+        getDiscogsOrderMessages(allOrders[a].id)
+          .then(data => {
+            console.log(data);
+          })
+      }
+      callback(null, allOrders);
+    },
+    function(orders, callback) {
+      console.log('waterfall 6');
+      dis.getIdentity(function(err, data) {
+        if (err) {
+          console.log('error getting Discogs username');
+          res.send('Server error.');
+        }
+        var username = data.username;
+        console.log(`got username: ${username}`);
+        var responseObj = {
+          username: username,
+          orders: orders
+        };
+        callback(null, responseObj);
+      });
+    }
+  ], function(err, responseObj) {
+        console.log('done');
+        res.render('items', responseObj);
+  }); // end async waterfall
+
+  // generate PayPal access token
+  function getPayPalAccessToken() {
+    return axios({
+      method: 'post',
+      url:'https://api.paypal.com/v1/oauth2/token',
+      headers: {
+        'Authorization': `Basic ${process.env.PAYPAL_AUTHORIZATION_TOKEN}` ,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      data: qs.stringify({ grant_type: 'client_credentials' })
+    })
+    .then(function(response) {
+      let paypalAccessToken = response.data.access_token;
+      return paypalAccessToken;
+    })
+    .catch(function(error) {
+      console.log('error getting paypal access token');
+      catchError(error);
+      res.send('Server error.')
+    });
+  } // end generate PayPal access token
+
+  // get PayPal transactions
+  function getPayPalTransactions(paypalAccessToken) {
+    return axios({
       method: 'get',
       url: 'https://api.paypal.com/v1/reporting/transactions',
       headers: {
-        'Authorization': `Bearer ${paypal_access_token}`,
+        'Authorization': `Bearer ${paypalAccessToken}`,
         'Content-Type': 'application/json'
       },
       params: {
@@ -51,9 +119,8 @@ router.get('/', function(req, res, next) {
       }
     })
     .then(function(response) {
-      var paypal_transactions_arr = [];
+      var paypalTransactionsArr = [];
       for (var i = 0; i < (response.data.transaction_details).length; i++) {
-        console.log(response.data.transaction_details[i]);
         var paypal_transaction_data = {
           transaction_id: response.data.transaction_details[i].transaction_info.transaction_id,
           invoice_id: response.data.transaction_details[i].transaction_info.invoice_id,
@@ -65,21 +132,23 @@ router.get('/', function(req, res, next) {
           country_code: response.data.transaction_details[i].shipping_info.address.country_code,
           postal_code: response.data.transaction_details[i].shipping_info.address.postal_code
         };
-        paypal_transactions_arr.push(paypal_transaction_data);
+        paypalTransactionsArr.push(paypal_transaction_data);
       }
-      console.log('paypal_transactions_arr', paypal_transactions_arr);
-      return paypal_transactions_arr;
+      return paypalTransactionsArr;
     })
-    .then(function(paypal_transactions_arr) {
-      // get payment pending orders
-      mp.getOrders({status: 'Payment Pending'}, function(err, data) {
-        console.log('\ngetting payment pending orders\n');
-        if (err) {
-          console.log(`\nerror getting payment pending orders:\n ${err}`);
-          res.send('Error, please refresh this page.');
-        }
+    .catch(function(error) {
+      console.log('error getting PayPal transactions');
+      catchError(error);
+      res.send('Server error.')
+    });
+  }  // end get PayPal transactions
+
+  // get Discogs orders
+  function getDiscogsOrders(status, paypal_transactions_arr) {
+    return mp.getOrders({status: status})
+      .then(function(data) {
         var orders = data.orders;
-        var paymentPenddingArr = [];
+        var ordersArray = [];
         for (var i = 0; i < orders.length; i++) {
           if (moment(orders[i].created) > moment('2019-12-31T23:59:59-08:00')) {
             var order = {};
@@ -94,6 +163,7 @@ router.get('/', function(req, res, next) {
             order.date = orders[i].created;
             order.created = moment(orders[i].created).format('lll');
             order.updated = moment(orders[i].last_activity).format('lll');
+            order.buyer = orders[i].buyer.username;
             order.status = orders[i].status;
             order.total = orders[i].total.value;
             order.additional_instructions = orders[i].additional_instructions;
@@ -102,22 +172,6 @@ router.get('/', function(req, res, next) {
             order.shipping_address = orders[i].shipping_address;
             order.paypal_data = paypal_data;
             order.messages = [];
-            mp.getOrderMessages(order_id, function(err, data) {
-              console.log('getting order messages');
-              if (err) {
-                console.log('error getting order messages' , err);
-                res.send('Error, please refresh this page.');
-              }
-              for (var k = 0; k < data.messages.length; k++) {
-                if (data.messages[k].type === 'message') {
-                  var messageObj = {};
-                  messageObj.from = data.messages[k].from.username;
-                  messageObj.message = data.messages[k].message;
-                  messageObj.timestamp = moment(data.messages[k].timestamp).format('MMM D, YYYY h:mma');
-                  order.messages.push(messageObj);
-                }
-              }
-            });
             order.items = [];
             for (var j = 0; j < orders[i].items.length; j++) {
               var item = {};
@@ -127,107 +181,62 @@ router.get('/', function(req, res, next) {
               item.thumbnail = orders[i].items[j].release.thumbnail;
               order.items.push(item);
             }
-            paymentPenddingArr.push(order);
+            ordersArray.push(order);
           }
         }
+        return ordersArray;
+      })
+      .catch(function(error) {
+        console.log(`error getting Discogs ${status} orders`);
+        catchError(error);
+        res.send('Server error.');
+      });
+  } // end get Discogs orders
 
-        // get payment received orders
-        mp.getOrders({status: 'Payment Received'}, function(err, data) {
-          console.log('\ngetting payment received orders\n');
-          if (err) {
-            console.log(`\nerror getting payment received orders:\n ${err}`);
-            res.send('Error, please refresh this page.');
+  // get Discogs order messages
+  function getDiscogsOrderMessages(order_id) {
+    return mp.getOrderMessages(order_id)
+      .then(function(data) {
+        var messages = [];
+        for (var k = 0; k < data.messages.length; k++) {
+          if (data.messages[k].type === 'message') {
+            var messageObj = {};
+            messageObj.from = data.messages[k].from.username;
+            messageObj.message = data.messages[k].message;
+            messageObj.timestamp = moment(data.messages[k].timestamp).format('MMM D, YYYY h:mma');
+            messages.push(messageObj);
           }
-          var orders = data.orders;
-          var paymentReceivedArr = [];
-          for (var i = 0; i < orders.length; i++) {
-            if (moment(orders[i].created) > moment('2019-12-31T23:59:59-08:00')) {
-              var order = {};
-              var order_id = orders[i].id;
-              var paypal_data = {};
-              for (var j = 0; j < paypal_transactions_arr.length; j++) {
-                if (order_id == paypal_transactions_arr[j].invoice_id) {
-                  paypal_data = paypal_transactions_arr[j];
-                }
-              }
-              order.id = order_id;
-              order.date = orders[i].created;
-              order.created = moment(orders[i].created).format('lll');
-              order.updated = moment(orders[i].last_activity).format('lll');
-              order.status = orders[i].status;
-              order.total = orders[i].total.value;
-              order.additional_instructions = orders[i].additional_instructions;
-              order.shipping_method = orders[i].shipping.method;
-              order.shipping_amount = orders[i].shipping.value;
-              order.shipping_address = orders[i].shipping_address;
-              order.paypal_data = paypal_data;
-              mp.getOrderMessages(order_id, function(err, data) {
-                console.log('getting order messages');
-                if (err) {
-                  console.log('error getting order messages' , err);
-                  res.send('Error, please refresh this page.');
-                }
-                for (var k = 0; k < data.messages.length; k++) {
-                  if (data.messages[k].type === 'message') {
-                    var messageObj = {};
-                    messageObj.from = data.messages[k].from.username;
-                    messageObj.message = data.messages[k].message;
-                    messageObj.timestamp = moment(data.messages[k].timestamp).format('MMM D, YYYY h:mma');
-                    order.messages.push(messageObj);
-                  }
-                }
-              });
-              order.items = [];
-              for (var j = 0; j < orders[i].items.length; j++) {
-                var item = {};
-                item.item_location = orders[i].items[j].item_location;
-                item.description = orders[i].items[j].release.description;
-                item.price = orders[i].items[j].price.value;
-                item.thumbnail = orders[i].items[j].release.thumbnail;
-                order.items.push(item);
-              }
-              paymentReceivedArr.push(order);
-            }
-          }
+        }
+        return messages;
+      })
+      .catch(function(error) {
+        console.log('error getting Discogs order messages');
+        catchError(error);
+        res.send('Server error.');
+      });
 
-          // create all orders array and join
-          var allOrdersArr = paymentPenddingArr.concat(paymentReceivedArr);
-          res.render('items', {username: username, orders: allOrdersArr});
-        }); // end get 'Payment Received'
-      }); // end get 'Payment Pending'
-    })
-    .catch(function(error) {
-      console.log('\nerror getting paypal transactions\n');
-      catchError(error);
-      res.send('Server error.')
-    }); // end get paypal transaction info
-  })
-  .catch(function(error) {
-    console.log('\nerror getting paypal access token\n');
-    catchError(error);
-    res.send('Server error.')
-  }); // end generate paypal access token
+  } // end get Discogs order messages
+
+  // error handler
+  function catchError(error) {
+    if (error.response) {
+     // The request was made and the server responded with a status code
+     // that falls out of the range of 2xx
+     console.log(error.response.data);
+     console.log(error.response.status);
+     console.log(error.response.headers);
+   } else if (error.request) {
+     // The request was made but no response was received
+     // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+     // http.ClientRequest in node.js
+     console.log(error.request);
+   } else {
+     // Something happened in setting up the request that triggered an Error
+     console.log('Error', error.message);
+     console.log(error);
+   }
+    console.log(error.config);
+  }
 }); // end items route
-
-// error handler
-function catchError(error) {
-  if (error.response) {
-   // The request was made and the server responded with a status code
-   // that falls out of the range of 2xx
-   console.log(error.response.data);
-   console.log(error.response.status);
-   console.log(error.response.headers);
- } else if (error.request) {
-   // The request was made but no response was received
-   // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-   // http.ClientRequest in node.js
-   console.log(error.request);
- } else {
-   // Something happened in setting up the request that triggered an Error
-   console.log('Error', error.message);
-   console.log(error);
- }
-  console.log(error.config);
-}
 
 module.exports = router;
