@@ -4,7 +4,7 @@ const axios = require('axios');
 var qs = require('qs');
 var Discogs = require('disconnect').Client;
 var moment = require('moment');
-var start_date = moment().subtract(3, 'days').format();
+var start_date = moment().subtract(31, 'days').format();
 var end_date = moment().format();
 var async = require('async');
 
@@ -14,71 +14,21 @@ router.get('/', function(req, res, next) {
   var dis = new Discogs(accessData);
   var mp = new Discogs(accessData).marketplace();
 
-  async.waterfall([
-    function(callback) {
-      console.log('waterfall 1');
-      getPayPalAccessToken()
-        .then(paypalAccessToken => {
-          console.log(`got PayPal access token: ${paypalAccessToken}`);
-          callback(null, paypalAccessToken);
-        });
-    },
-    function(paypalAccessToken, callback) {
-      console.log('waterfall 2');
-      getPayPalTransactions(paypalAccessToken)
-        .then(paypalTransactionsArr => {
-          console.log(`got PayPal transactions: ${paypalTransactionsArr}`);
-          callback(null, paypalTransactionsArr);
-        })
-    },
-    function(paypalTransactionsArr, callback) {
-      console.log('waterfall 3');
-      getDiscogsOrders('Payment Pending', paypalTransactionsArr)
-        .then(paymentPendingOrders => {
-          console.log(`got payment pending orders: ${paymentPendingOrders}`);
-          callback(null, paypalTransactionsArr, paymentPendingOrders);
-        });
-    },
-    function(paypalTransactionsArr, paymentPendingOrders, callback) {
-      console.log('waterfall 4');
-      getDiscogsOrders('Payment Received', paypalTransactionsArr)
-        .then(paymentReceivedOrders => {
-          console.log(`got payment received orders: ${paymentReceivedOrders}`);
-          const allOrders = paymentPendingOrders.concat(paymentReceivedOrders);
-          callback(null, allOrders);
-        });
-    },
-    function(allOrders, callback) {
-      console.log('waterfall 5');
-      for (var a = 0; a < allOrders.length; a++) {
-        console.log(allOrders[a].id);
-        getDiscogsOrderMessages(allOrders[a].id)
-          .then(data => {
-            console.log(data);
-          })
-      }
-      callback(null, allOrders);
-    },
-    function(orders, callback) {
-      console.log('waterfall 6');
-      dis.getIdentity(function(err, data) {
-        if (err) {
-          console.log('error getting Discogs username');
-          res.send('Server error.');
-        }
-        var username = data.username;
-        console.log(`got username: ${username}`);
-        var responseObj = {
-          username: username,
-          orders: orders
-        };
-        callback(null, responseObj);
-      });
+  start();
+
+  async function start() {
+    let paypalAccessToken = await getPayPalAccessToken();
+    let paypalTransactionsArr = await getPayPalTransactions(paypalAccessToken);
+    let paymentPendingOrders = await getDiscogsOrders('Payment Pending', paypalTransactionsArr);
+    let paymentReceivedOrders = await getDiscogsOrders('Payment Received', paypalTransactionsArr);
+    let orders = paymentPendingOrders.concat(paymentReceivedOrders);
+    let username = await getUsername();
+    let responseObj = {
+      username: username,
+      orders: orders
     }
-  ], function(err, responseObj) {
-        console.log('done');
-        res.render('items', responseObj);
-  }); // end async waterfall
+    res.render('items', responseObj);
+  }
 
   // generate PayPal access token
   function getPayPalAccessToken() {
@@ -146,7 +96,7 @@ router.get('/', function(req, res, next) {
   // get Discogs orders
   function getDiscogsOrders(status, paypal_transactions_arr) {
     return mp.getOrders({status: status})
-      .then(function(data) {
+      .then(async function(data) {
         var orders = data.orders;
         var ordersArray = [];
         for (var i = 0; i < orders.length; i++) {
@@ -171,7 +121,7 @@ router.get('/', function(req, res, next) {
             order.shipping_amount = orders[i].shipping.value;
             order.shipping_address = orders[i].shipping_address;
             order.paypal_data = paypal_data;
-            order.messages = [];
+            order.messages = await getDiscogsOrderMessages(order_id);
             order.items = [];
             for (var j = 0; j < orders[i].items.length; j++) {
               var item = {};
@@ -198,12 +148,12 @@ router.get('/', function(req, res, next) {
     return mp.getOrderMessages(order_id)
       .then(function(data) {
         var messages = [];
-        for (var k = 0; k < data.messages.length; k++) {
-          if (data.messages[k].type === 'message') {
+        for (var i = 0; i < data.messages.length; i++) {
+          if (data.messages[i].type === 'message') {
             var messageObj = {};
-            messageObj.from = data.messages[k].from.username;
-            messageObj.message = data.messages[k].message;
-            messageObj.timestamp = moment(data.messages[k].timestamp).format('MMM D, YYYY h:mma');
+            messageObj.from = data.messages[i].from.username;
+            messageObj.message = data.messages[i].message;
+            messageObj.timestamp = moment(data.messages[i].timestamp).format('MMM D, YYYY h:mma');
             messages.push(messageObj);
           }
         }
@@ -214,8 +164,21 @@ router.get('/', function(req, res, next) {
         catchError(error);
         res.send('Server error.');
       });
-
   } // end get Discogs order messages
+
+  // get Discogs username
+  function getUsername() {
+    return dis.getIdentity()
+      .then(function(data) {
+        var username = data.username;
+        return username;
+      })
+      .catch(function(error) {
+        console.log('error getting Discogs username');
+        catchError(error);
+        res.send('Server error.');
+      });
+  }
 
   // error handler
   function catchError(error) {

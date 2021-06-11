@@ -44,7 +44,9 @@
             <span class="font-weight-bold">Discogs Shipping Address: </span><p><pre>{{shipping_address}}</pre>
             {{#if paypal_data.name}}
               <span class="font-weight-bold">PayPal Shipping Address: </span><p><pre>{{paypal_data.name}}<br>{{paypal_data.address_line1}}<br>{{#if paypal_data.address_line2}}{{paypal_data.address_line2}}<br>{{/if}}{{paypal_data.city}}, {{paypal_data.state}} {{paypal_data.postal_code}}<br>{{paypal_data.country_code}}</pre>
-              <span class="font-weight-bold mt-5">Discogs Link: </span><a href="https://www.discogs.com/sell/order/{{id}}" target="_blank">https://www.discogs.com/sell/order/{{id}}</a><br>
+            {{/if}}
+            <span class="font-weight-bold mt-5">Discogs Link: </span><a href="https://www.discogs.com/sell/order/{{id}}" target="_blank">https://www.discogs.com/sell/order/{{id}}</a><br>
+            {{#if paypal_data.name}}
               <span class="font-weight-bold">PayPal Shipping Link: </span><a href="https://www.paypal.com/shiplabel/create/{{paypal_data.transaction_id}}" target="_blank">https://www.paypal.com/shiplabel/create/{{paypal_data.transaction_id}}</a><br>
             {{/if}}
           </p>
@@ -64,8 +66,7 @@
                       </div>
                     </p>
                   </div>
-            {{/messages}}
-          {{/if}}
+            {{/messages}} {{/if}}
           <br>
           <span class="font-weight-bold">Items</span>
           {{#items}}
