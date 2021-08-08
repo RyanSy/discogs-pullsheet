@@ -4,7 +4,7 @@ const axios = require('axios');
 var qs = require('qs');
 var Discogs = require('disconnect').Client;
 var moment = require('moment');
-var start_date = moment().subtract(31, 'days').format();
+var start_date = moment().subtract(7, 'days').format();
 var end_date = moment().format();
 var async = require('async');
 
@@ -69,21 +69,41 @@ router.get('/', function(req, res, next) {
       }
     })
     .then(function(response) {
+      var paypalTransactionDetails = response.data.transaction_details;
       var paypalTransactionsArr = [];
-      for (var i = 0; i < (response.data.transaction_details).length; i++) {
+      for (var i = 0; i < (paypalTransactionDetails).length; i++) {
+        var transaction_id = paypalTransactionDetails[i].transaction_info.transaction_id;
+        var invoice_id = paypalTransactionDetails[i].transaction_info.invoice_id;
+        var name = paypalTransactionDetails[i].shipping_info.name;
+        if (paypalTransactionDetails[i].shipping_info.address == null) {
+          var address_line1 = 'n/a';
+          var address_line2 = 'n/a';
+          var city = 'n/a';
+          var state = 'n/a';
+          var country_code = 'n/a';
+          var postal_code = 'n/a';
+        } else {
+          var address_line1 = paypalTransactionDetails[i].shipping_info.address.line1;
+          var address_line2 = paypalTransactionDetails[i].shipping_info.address.line2
+          var city = paypalTransactionDetails[i].shipping_info.address.city;
+          var state = paypalTransactionDetails[i].shipping_info.address.state;
+          var country_code = paypalTransactionDetails[i].shipping_info.address.country_code;
+          var postal_code = paypalTransactionDetails[i].shipping_info.address.postal_code;
+        }
         var paypal_transaction_data = {
-          transaction_id: response.data.transaction_details[i].transaction_info.transaction_id,
-          invoice_id: response.data.transaction_details[i].transaction_info.invoice_id,
-          name: response.data.transaction_details[i].shipping_info.name,
-          address_line1: (response.data.transaction_details[i].shipping_info.address.line1),
-          address_line2: response.data.transaction_details[i].shipping_info.address.line2,
-          city: response.data.transaction_details[i].shipping_info.address.city,
-          state: response.data.transaction_details[i].shipping_info.address.state,
-          country_code: response.data.transaction_details[i].shipping_info.address.country_code,
-          postal_code: response.data.transaction_details[i].shipping_info.address.postal_code
+          transaction_id: transaction_id,
+          invoice_id: invoice_id,
+          name: name,
+          address_line1: address_line1,
+          address_line2: address_line2,
+          city: city,
+          state: state,
+          country_code: country_code,
+          postal_code: postal_code
         };
         paypalTransactionsArr.push(paypal_transaction_data);
       }
+      console.log(paypalTransactionsArr);
       return paypalTransactionsArr;
     })
     .catch(function(error) {
