@@ -9,7 +9,6 @@ var end_date = moment().format();
 var async = require('async');
 
 router.get('/', function(req, res, next) {
-  console.log('items route called');
   var accessData = req.session.accessData;
   var dis = new Discogs(accessData);
   var mp = new Discogs(accessData).marketplace();
@@ -19,13 +18,11 @@ router.get('/', function(req, res, next) {
   async function start() {
     let paypalAccessToken = await getPayPalAccessToken();
     let paypalTransactionsArr = await getPayPalTransactions(paypalAccessToken);
-    let paymentPendingOrders = await getDiscogsOrders('Payment Pending', paypalTransactionsArr);
     let paymentReceivedOrders = await getDiscogsOrders('Payment Received', paypalTransactionsArr);
-    let orders = paymentPendingOrders.concat(paymentReceivedOrders);
     let username = await getUsername();
     let responseObj = {
       username: username,
-      orders: orders
+      orders: paymentReceivedOrders
     }
     res.render('items', responseObj);
   }
@@ -62,7 +59,7 @@ router.get('/', function(req, res, next) {
         'Content-Type': 'application/json'
       },
       params: {
-        transaction_type: 'T0007',
+        transaction_type: 'T0006',
         start_date: start_date,
         end_date: end_date,
         fields: 'shipping_info'
@@ -154,6 +151,7 @@ router.get('/', function(req, res, next) {
             ordersArray.push(order);
           }
         }
+        console.log('ordersArray:', ordersArray);
         return ordersArray;
       })
       .catch(function(error) {
