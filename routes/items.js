@@ -117,7 +117,7 @@ router.get('/', function(req, res, next) {
         var orders = data.orders;
         var ordersArray = [];
         for (var i = 0; i < orders.length; i++) {
-          if (moment(orders[i].created) > moment('2019-12-31T23:59:59-08:00')) {
+          if (moment(orders[i].created) > moment('2021-12-31T23:59:59-08:00')) {
             var order = {};
             var order_id = orders[i].id;
             var paypal_data = {};
