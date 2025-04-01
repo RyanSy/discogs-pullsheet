@@ -6,8 +6,8 @@ var Discogs = require('disconnect').Client;
 router.get('/', function(req, res, next) {
   var oAuth = new Discogs().oauth();
 	oAuth.getRequestToken(
-		process.env.CONSUMER_KEY,
-		process.env.CONSUMER_SECRET,
+		process.env.DISCOGS_CONSUMER_KEY,
+		process.env.DISCOGS_CONSUMER_SECRET,
 		process.env.HOST + 'callback',
 		function(err, requestData){
       if (err) {
@@ -16,7 +16,7 @@ router.get('/', function(req, res, next) {
       }
 			// Persist "requestData" here so that the callback handler can
 			// access it later after returning from the authorize url
-      req.session.requestData = requestData;
+      		req.session.requestData = requestData;
 			res.redirect(requestData.authorizeUrl);
 		}
 	);

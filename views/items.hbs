@@ -1,12 +1,20 @@
 <h3>Discogs Pullsheet</h3>
-<h6>Signed in as: {{username}}<span class="ml-3"><a href="/logout">Log Out</a></span></h6>
+<h6>Signed in as: {{username}} | <span><a href="/logout">Log Out</a></span></h6>
+
 <!-- Button trigger modal -->
-<button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#locationsList">
-  Show Pullsheet
-</button>
+<div class="pt-3 pr-3 pb-3">
+  {{#if message}}
+    <span>{{message}}</span>
+  {{else}}
+    <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#locationsList">
+      Show Locations List
+    </button>
+  {{/if}}
+</div>
 
 <!-- Modal -->
-<div class="modal  " id="locationsList" tabindex="-1" role="dialog" aria-labelledby="locationsListTitle" aria-hidden="true">
+<div class="modal  " id="locationsList" tabindex="-1" role="dialog" aria-labelledby="locationsListTitle"
+  aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header">
@@ -17,9 +25,9 @@
       </div>
       <div class="modal-body">
         {{#each orders}}
-          {{#items}}
-            <div><br>{{description}}<br><span class="font-weight-bold">Location: </span>{{item_location}}</div>
-          {{/items}}
+        {{#items}}
+        <div><br>{{description}}<br><span class="font-weight-bold">Location: </span>{{item_location}}</div>
+        {{/items}}
         {{/each}}
       </div>
     </div>
@@ -29,64 +37,78 @@
 <table class="table table-striped">
   <tbody>
     {{#each orders}}
-      <tr>
-        <td>
-          <h6>
-            <span class="font-weight-bold mt-5">Order ID: </span><a href="https://www.discogs.com/sell/order/{{id}}" target="_blank">{{id}}</a><br>
-            <span class="font-weight-bold">Created: </span>{{created}}<br>
-            <span class="font-weight-bold">Updated: </span>{{updated}}<br>
-            <span class="font-weight-bold">Status: </span>{{status}}<br>
-            <span class="font-weight-bold">Buyer: </span>{{buyer}}<br>
-            <span class="font-weight-bold">Shipping Total: </span>${{shipping_amount}} ({{shipping_method}})<br>
-            <span class="font-weight-bold">Items Total: </span>${{total}}<br>
-            <span class="font-weight-bold">Additional Instructions: </span>{{additional_instructions}}<br>
-            <p>
-            <span class="font-weight-bold">Discogs Shipping Address: </span><p><pre>{{shipping_address}}</pre>
-            {{#if paypal_data.name}}
-              <span class="font-weight-bold">PayPal Shipping Address: </span><p><pre>{{paypal_data.name}}<br>{{paypal_data.address_line1}}<br>{{#if paypal_data.address_line2}}{{paypal_data.address_line2}}<br>{{/if}}{{paypal_data.city}}, {{paypal_data.state}} {{paypal_data.postal_code}}<br>{{paypal_data.country_code}}</pre>
-            {{/if}}
-            <span class="font-weight-bold mt-5">Discogs Link: </span><a href="https://www.discogs.com/sell/order/{{id}}" target="_blank">https://www.discogs.com/sell/order/{{id}}</a><br>
-            {{#if paypal_data.name}}
-              <span class="font-weight-bold">PayPal Shipping Link: </span><a href="https://www.paypal.com/shiplabel/create/{{paypal_data.transaction_id}}" target="_blank">https://www.paypal.com/shiplabel/create/{{paypal_data.transaction_id}}</a><br>
-            {{/if}}
-          </p>
-          </h6><br>
-          {{#if messages}}
-            <span class="font-weight-bold">Messages</span>
-            {{#messages}}
-                  <div class="row mt-3 mb-3">
-                    <p>
-                      <div class="col-2">
-                        <span>{{from}}:</span>
-                        <br>
-                        <span>{{timestamp}}</span>
-                      </div>
-                      <div class="col-10  ">
-                        {{message}}
-                      </div>
-                    </p>
-                  </div>
-            {{/messages}} {{/if}}
+    <tr>
+      <td>
+          <span class="font-weight-bold mt-5">Order ID: </span><a href="https://www.discogs.com/sell/order/{{id}}"
+            target="_blank">{{id}}</a><br>
+          <span class="font-weight-bold">Created: </span>{{created}}<br>
+          <span class="font-weight-bold">Updated: </span>{{updated}}<br>
+          <span class="font-weight-bold">Status: </span>{{status}}<br>
+          <span class="font-weight-bold">Buyer: </span>{{buyer}}<br>
+          <span class="font-weight-bold">Items Total: </span>${{total}}<br>
+          <span class="font-weight-bold">Shipping Total: </span>${{shipping_amount}} ({{shipping_method}})<br>
+          {{#if additional_instructions}}
+          <span class="font-weight-bold">Additional Instructions: </span>{{additional_instructions}}<br>
+          {{/if}}
           <br>
-          <span class="font-weight-bold">Items</span>
-          {{#items}}
-                <div class="row mt-3 mb-3">
-                  <p>
-                    <div class="col-2">
-                      <img class="img-fluid" src="{{thumbnail}}" alt="{{description}}">
-                    </div>
-                    <div class="col-10  ">
-                      {{description}}
-                      <br>
-                      <span class="font-weight-bold">Price:</span> ${{price}}
-                      <br>
-                      <span class="font-weight-bold">Location:</span> {{item_location}}
-                    </div>
-                  </p>
-                </div>
-          {{/items}}
-        </td>
-      </tr>
+          <span class="font-weight-bold">Discogs Shipping Address:</span>
+          <pre class="p-3">{{shipping_address}}</pre>
+          <span class="font-weight-bold">PayPal Shipping Address:</span>
+          {{#if paypal_data.name}}
+            <p class="p-3">
+              {{paypal_data.name}}<br>
+              {{paypal_data.address_line1}}<br>
+              {{#if paypal_data.address_line2}}
+                {{paypal_data.address_line2}}<br>
+              {{/if}}
+              {{paypal_data.city}}, {{paypal_data.state}} {{paypal_data.postal_code}}<br>
+              {{paypal_data.country_code}}
+            </p>
+          {{/if}}
+          <span class="font-weight-bold mt-5">Discogs Link: </span><a href="https://www.discogs.com/sell/order/{{id}}"
+            target="_blank">https://www.discogs.com/sell/order/{{id}}</a><br>
+          {{#if paypal_data.name}}
+          <span class="font-weight-bold">PayPal Shipping Link: </span><a
+            href="https://www.paypal.com/shiplabel/create/{{paypal_data.transaction_id}}"
+            target="_blank">https://www.paypal.com/shiplabel/create/{{paypal_data.transaction_id}}</a><br>
+          {{/if}}
+        <br>
+        {{#if messages}}
+        <span class="font-weight-bold">Messages</span>
+        {{#messages}}
+        <div class="row mt-3 mb-3">
+          <p>
+          <div class="col-2">
+            <span>{{from}}:</span>
+            <br>
+            <span>{{timestamp}}</span>
+          </div>
+          <div class="col-10  ">
+            {{message}}
+          </div>
+          </p>
+        </div>
+        {{/messages}} {{/if}}
+        <br>
+        <span class="font-weight-bold">Items</span>
+        {{#items}}
+        <div class="row mt-3 mb-3">
+          <p>
+          <div class="col-2">
+            <img class="img-fluid" src="{{thumbnail}}" alt="{{description}}">
+          </div>
+          <div class="col-10  ">
+            {{description}}
+            <br>
+            <span class="font-weight-bold">Price:</span> ${{price}}
+            <br>
+            <span class="font-weight-bold">Location:</span> {{item_location}}
+          </div>
+          </p>
+        </div>
+        {{/items}}
+      </td>
+    </tr>
     {{/each}}
   </tbody>
 </table>
