@@ -4,10 +4,8 @@ const axios = require('axios');
 var qs = require('qs');
 var Discogs = require('disconnect').Client;
 var moment = require('moment');
-const { log } = require('async');
 var start_date = moment().subtract(7, 'days').format();
 var end_date = moment().format();
-console.log(start_date);
 
 
 
