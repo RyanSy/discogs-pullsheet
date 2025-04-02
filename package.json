@@ -1,6 +1,6 @@
 {
   "name": "discogs-pullsheet",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "scripts": {
     "start": "node --env-file=.env ./bin/www"
