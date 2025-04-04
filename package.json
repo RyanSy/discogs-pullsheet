@@ -3,7 +3,9 @@
   "version": "1.0.4",
   "private": true,
   "scripts": {
-    "start": "node --env-file=.env ./bin/www"
+    "start": "node --env-file=.env ./bin/www",
+    "dev": "node --env-file=.env --watch ./bin/www"
+
   },
   "dependencies": {
     "axios": "^0.21.1",
@@ -19,8 +21,5 @@
     "moment": "^2.24.0",
     "morgan": "~1.9.0",
     "serve-favicon": "^2.5.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.9"
   }
 }
