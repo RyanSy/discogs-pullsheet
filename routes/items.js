@@ -3,10 +3,10 @@ var router = express.Router();
 var moment = require('moment');
 var start_date = moment().subtract(7, 'days').format();
 var end_date = moment().format();
-
 const Discogs = require('disconnect').Client;
 const paypal = require('../api/paypal');
 
+// render items view with list of discogs orders with 'payment received' status
 router.get('/', function(req, res) {
   const accessData = req.session.accessData;
   const dis = new Discogs(accessData);
@@ -53,7 +53,6 @@ router.get('/', function(req, res) {
             ordersArray.push(order);
           }
         }
-
         return ordersArray;
       })
       .catch(function(error) {
@@ -123,8 +122,6 @@ router.get('/', function(req, res) {
 
   // Initialize...
   (async function() {
-    console.log('initializing...');
-
     const paypalAccessToken = await paypal.getAccessToken();
     const paypalTransactions = await paypal.getTransactions(paypalAccessToken);
     const paymentReceivedOrders = await getDiscogsOrders('Payment Received', paypalTransactions);
