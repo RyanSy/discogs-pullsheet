@@ -2,7 +2,11 @@ var express = require('express');
 var router = express.Router();
 var Discogs = require('disconnect').Client;
 
-// get authorization
+/**
+ * /authorize route
+ * 
+ * gets oAuth token
+ */
 router.get('/', function(req, res, next) {
   var oAuth = new Discogs().oauth();
 	oAuth.getRequestToken(
@@ -10,13 +14,14 @@ router.get('/', function(req, res, next) {
 		process.env.DISCOGS_CONSUMER_SECRET,
 		process.env.HOST + 'callback',
 		function(err, requestData){
-      if (err) {
-        console.log(err);
-        res.send("Error");
-      }
+			if (err) {
+				console.log(err);
+				res.send("Error requesting oAuth token.");
+			}
+
 			// Persist "requestData" here so that the callback handler can
 			// access it later after returning from the authorize url
-      		req.session.requestData = requestData;
+			req.session.requestData = requestData;
 			res.redirect(requestData.authorizeUrl);
 		}
 	);

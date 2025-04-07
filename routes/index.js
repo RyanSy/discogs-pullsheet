@@ -8,7 +8,7 @@ router.get('/', function(req, res, next) {
       host: process.env.HOST,
     });
   } else {
-    res.redirect(process.env.HOST + 'items');
+    res.redirect(process.env.HOST + '/items');
   }
 });
 

@@ -2,18 +2,17 @@ var express = require('express');
 var router = express.Router();
 var moment = require('moment');
 var start_date = moment().subtract(7, 'days').format();
-var end_date = moment().format();
 const Discogs = require('disconnect').Client;
 const paypal = require('../api/paypal');
 
 // render items view with list of discogs orders with 'payment received' status
 router.get('/', function(req, res) {
   const accessData = req.session.accessData;
-  const dis = new Discogs(accessData);
-  const mp = new Discogs(accessData).marketplace();
 
   // get Discogs orders
-  function getDiscogsOrders(status, paypal_transactions) {
+  function getDiscogsOrders(access_data, status, paypal_transactions) {
+    const mp = new Discogs(access_data).marketplace();
+
     return mp.getOrders({ status: status, created_after: start_date })
       .then(async function (data) {
         var orders = data.orders;
@@ -40,7 +39,7 @@ router.get('/', function(req, res) {
             order.shipping_amount = orders[i].shipping.value;
             order.shipping_address = orders[i].shipping_address;
             order.paypal_data = paypal_data;
-            order.messages = await getDiscogsOrderMessages(order_id);
+            order.messages = await getDiscogsOrderMessages(accessData, order_id);
             order.items = [];
             for (var j = 0; j < orders[i].items.length; j++) {
               var item = {};
@@ -63,7 +62,9 @@ router.get('/', function(req, res) {
   }
 
   // get Discogs order messages
-  function getDiscogsOrderMessages(order_id) {
+  function getDiscogsOrderMessages(access_data, order_id) {
+    const mp = new Discogs(access_data).marketplace();
+
     return mp.getOrderMessages(order_id)
       .then(function(data) {
         var messages = [];
@@ -86,7 +87,9 @@ router.get('/', function(req, res) {
   }
 
   // get Discogs username
-  function getDiscogsUsername() {
+  function getDiscogsUsername(access_data) {
+    const dis = new Discogs(access_data);
+
     return dis.getIdentity()
       .then(function(data) {
         var username = data.username;
@@ -124,8 +127,8 @@ router.get('/', function(req, res) {
   (async function() {
     const paypalAccessToken = await paypal.getAccessToken();
     const paypalTransactions = await paypal.getTransactions(paypalAccessToken);
-    const paymentReceivedOrders = await getDiscogsOrders('Payment Received', paypalTransactions);
-    const username = await getDiscogsUsername();
+    const paymentReceivedOrders = await getDiscogsOrders(accessData, 'Payment Received', paypalTransactions);
+    const username = await getDiscogsUsername(accessData);
     let message;
     paymentReceivedOrders.length === 0 ? message = 'No new orders found.' : message = null;
     const responseObj = {
