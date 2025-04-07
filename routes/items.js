@@ -9,8 +9,8 @@ router.get('/', function(req, res, next) {
   
   // Initialize...
   (async function() {
-    const paypalAccessToken = await paypal.getAccessToken();
-    const paypalTransactions = await paypal.getTransactions(paypalAccessToken);
+    const paypalAccessToken = await paypal.getAccessToken(next);
+    const paypalTransactions = await paypal.getTransactions(paypalAccessToken, next);
     const paymentReceivedOrders = await discogs.getOrders(accessData, 'Payment Received', paypalTransactions, next);
     const username = await discogs.getIdentity(accessData, next);
     let message;
