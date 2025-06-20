@@ -8,7 +8,7 @@ router.get('/', function(req, res, next) {
     if (err) {
       res.send('Error logging out.');
     }
-    res.redirect(process.env.HOST + 'items');
+    res.redirect(process.env.HOST);
   })
 });
 
